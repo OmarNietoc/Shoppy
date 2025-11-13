@@ -23,6 +23,9 @@
     <modules>
         <module>Users</module>
         <module>Supports</module>
+        <module>Payments</module>
+        <module>Catalog</module>
+        <module>Order</module>
     </modules>
 
     <dependencies>

@@ -44,7 +44,7 @@ public class SoporteController {
             @ApiResponse(responseCode = "200", description = "Lista de solicitudes obtenida exitosamente")
     })
 
-    @GetMapping("/api/supports/all")
+    @GetMapping
     public List<Soporte> obtenerTodas() {
         return soporteService.obtenerTodas();
     }
@@ -58,7 +58,7 @@ public class SoporteController {
             @ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
     })
 
-    @GetMapping("/api/supports/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(soporteService.ObtenerSoportePorId(id));
     }

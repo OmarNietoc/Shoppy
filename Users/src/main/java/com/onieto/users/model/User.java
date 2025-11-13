@@ -47,11 +47,28 @@ public class User {
     @Max(value = 1, message = "El 'status' debe ser 1 o 0")
     private Integer status;
 
+    // Imagen de perfil (nullable)
+    @Lob
+    @Column(name = "imagen", columnDefinition = "LONGBLOB", nullable = true)
+    private byte[] imagen;
+
+    // Firebase UID (nullable)
+    @Column(name = "firebase_id", length = 255, nullable = true)
+    private String firebaseId;
+
+    // 🔹 Constructor principal sin los campos opcionales
     public User(String name, String email, String password, Role role, Integer status) {
+        this(name, email, password, role, status, null, null);
+    }
+
+    // 🔹 Constructor completo con los campos opcionales
+    public User(String name, String email, String password, Role role, Integer status, byte[] imagen, String firebaseId) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
         this.status = status;
+        this.imagen = imagen;
+        this.firebaseId = firebaseId;
     }
 }

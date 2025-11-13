@@ -49,7 +49,9 @@ class UserServiceTest {
                 "juan@edutech.com",
                 "Password123",
                 role,
-                1
+                1,
+                null,
+                null
         );
     }
 
