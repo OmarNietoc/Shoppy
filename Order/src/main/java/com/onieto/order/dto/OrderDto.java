@@ -1,23 +1,27 @@
 package com.onieto.order.dto;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderDto {
 
-    @NotNull(message = "El userId no puede ser nulo")
-    private Long userId;
+    @NotBlank(message = "El email del usuario es obligatorio")
+    @Email(message = "El email del usuario debe ser válido")
+    private String userEmail;
 
-    @NotNull(message = "El OrderId no puede ser nulo")
-    private Long orderId;
+    @NotEmpty(message = "La orden debe contener al menos un producto")
+    private List<@Valid OrderItemRequestDto> items;
 
     // Código de cupón opcional
     private String couponCode;
-
-
 }

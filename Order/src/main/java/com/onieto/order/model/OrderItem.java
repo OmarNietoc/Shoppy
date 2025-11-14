@@ -2,7 +2,9 @@ package com.onieto.order.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,25 +29,23 @@ public class OrderItem {
     @JsonBackReference
     private Order order;
 
-    @NotNull(message = "El producto es obligatorio")
-    private Long productId;
+    @NotBlank(message = "El identificador del producto es obligatorio")
+    @Column(name = "product_id", nullable = false, length = 50)
+    private String productId;
 
     // Datos cacheados al añadir al carrito
     private String productName;
+    @Column(name = "product_description", length = 1000)
+    private String productDescription;
+    @NotNull(message = "El precio unitario es obligatorio")
     private BigDecimal unitPrice;
     private String productImageUrl;
 
     @NotNull(message = "La cantidad no puede ser nula")
+    @Positive(message = "La cantidad debe ser mayor que 0")
     private Integer quantity;
 
-    @Column(name = "subtotal", insertable = false, updatable = false)
+    @NotNull(message = "El subtotal es obligatorio")
+    @Column(name = "subtotal")
     private BigDecimal subtotal;
-
-    // Metodo para cachear datos del producto
-    public void cacheProductData(Product product) {
-        this.productName = product.getName();
-        this.productDescription = product.getDescription();
-        this.unitPrice = product.getPrice();
-        this.productImageUrl = product.getImageUrl();
-    }
 }

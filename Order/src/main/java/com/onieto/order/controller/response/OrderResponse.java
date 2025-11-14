@@ -1,6 +1,5 @@
 package com.onieto.order.controller.response;
 
-import com.onieto.order.model.Coupon;
 import com.onieto.order.model.OrderItem;
 import com.onieto.order.model.OrderStatus;
 import lombok.AllArgsConstructor;
@@ -19,9 +18,10 @@ import java.util.List;
 public class OrderResponse {
 
     private Long id;
-    private Long userId;
+    private String userEmail;
     private OrderStatus estado;
     private CouponResponse coupon;
+    private BigDecimal discountApplied;
     private BigDecimal finalPrice;
     private LocalDateTime orderDate;
     private List<OrderItem> items;

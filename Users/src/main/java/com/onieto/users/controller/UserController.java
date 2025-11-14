@@ -58,6 +58,17 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @Operation(summary = "Obtener usuario por email", description = "Retorna los detalles de un usuario especificado por su correo electrónico.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuario encontrado correctamente",
+                    content = @Content(schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
+    @GetMapping("/by-email")
+    public ResponseEntity<User> getUserByEmail(@RequestParam String email) {
+        return ResponseEntity.ok(userService.getUserByEmail(email));
+    }
+
     @Operation(summary = "Agregar nuevo usuario", description = "Crea un nuevo usuario en la base de datos.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Usuario creado exitosamente",

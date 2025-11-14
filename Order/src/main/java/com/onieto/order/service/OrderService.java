@@ -1,23 +1,30 @@
 package com.onieto.order.service;
 
+import com.onieto.order.client.ProductClient;
 import com.onieto.order.controller.response.CouponResponse;
 import com.onieto.order.controller.response.MessageResponse;
 import com.onieto.order.controller.response.OrderResponse;
 import com.onieto.order.controller.response.UserResponseDto;
-import com.onieto.order.model.OrderStatus;
-import com.onieto.order.service.CouponService;
 import com.onieto.order.dto.OrderDto;
+import com.onieto.order.dto.OrderItemRequestDto;
+import com.onieto.order.dto.ProductResponseDto;
 import com.onieto.order.exception.ResourceNotFoundException;
 import com.onieto.order.model.Coupon;
 import com.onieto.order.model.Order;
+import com.onieto.order.model.OrderItem;
+import com.onieto.order.model.OrderStatus;
 import com.onieto.order.repository.OrderRepository;
+import feign.FeignException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,10 +32,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderService {
 
+    private static final BigDecimal ZERO = BigDecimal.ZERO;
+
     private final OrderRepository orderRepository;
     private final CouponService couponService;
     private final UserValidatorService userValidatorService;
-
+    private final ProductClient productClient;
 
     public ResponseEntity<OrderResponse> getOrderDtoById(Long id) {
         Order order = getOrderById(id);
@@ -40,37 +49,54 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Orden no encontrada: " + id));
     }
 
-
-
     public ResponseEntity<List<OrderResponse>> getAllOrders() {
-        return ResponseEntity.ok(orderRepository.findAll().stream()
+        List<OrderResponse> responses = orderRepository.findAll()
+                .stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responses);
+    }
+
+    public ResponseEntity<OrderResponse> createOrder(@Valid OrderDto dto) {
+        Order order = buildOrderFromDto(dto, null);
+        orderRepository.save(order);
+        return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(order));
+    }
+
+    public ResponseEntity<OrderResponse> updateOrder(Long id, @Valid OrderDto dto) {
+        Order existing = getOrderById(id);
+        Order updated = buildOrderFromDto(dto, existing);
+        updated.setId(existing.getId());
+        orderRepository.save(updated);
+        return ResponseEntity.ok(convertToDTO(updated));
+    }
+
+    public ResponseEntity<MessageResponse> updateOrderStatusById(Long id, OrderStatus status) {
+        if (status == null) {
+            throw new IllegalArgumentException("El estado de la orden no puede ser nulo.");
+        }
+        Order order = getOrderById(id);
+        order.setEstado(status);
+        orderRepository.save(order);
+        return ResponseEntity.ok(new MessageResponse("Estado de la orden actualizado exitosamente: " + status));
+    }
+
+    public ResponseEntity<MessageResponse> deleteOrder(Long id) {
+        Order order = getOrderById(id);
+        orderRepository.delete(order);
+        return ResponseEntity.ok(new MessageResponse("Orden eliminada correctamente."));
     }
 
     private OrderResponse convertToDTO(Order order) {
         return OrderResponse.builder()
                 .id(order.getId())
-                .userId(order.getUserId())
+                .userEmail(order.getUserEmail())
                 .estado(order.getEstado())
-                .coupon(order.getCoupon() != null ?
-                        convertCouponToResponse(order.getCoupon()) : null)
+                .coupon(order.getCoupon() != null ? convertCouponToResponse(order.getCoupon()) : null)
+                .discountApplied(order.getDiscountApplied())
                 .finalPrice(order.getFinalPrice())
                 .orderDate(order.getOrderDate())
                 .items(order.getItems())
-                .build();
-    }
-
-    private CourseResponse convertCourseToResponse(Course course) {
-        return CourseResponse.builder()
-                .id(course.getId())
-                .title(course.getTitle())
-                .description(course.getDescription())
-                .category(course.getCategory())
-                .level(course.getLevel())
-                .instructorId(course.getInstructorId())// Se obtiene del microservicio de usuarios
-                .price(course.getPrice())
-                .tags(course.getTags())
                 .build();
     }
 
@@ -83,69 +109,94 @@ public class OrderService {
                 .build();
     }
 
-    public ResponseEntity<MessageResponse> createOrder(@Valid OrderDto dto) {
-        Order order = buildOrderFromDto(dto);
-        orderRepository.save(order);
-        return ResponseEntity.status(201).body(new MessageResponse("Orden creada exitosamente."));
-    }
+    private Order buildOrderFromDto(OrderDto dto, Order currentOrder) {
+        UserResponseDto user = userValidatorService.getUserByEmail(dto.getUserEmail());
 
-    public ResponseEntity<MessageResponse> updateOrder(Long id, @Valid OrderDto dto) {
-        Order existing = getOrderById(id);
-        Order updated = buildOrderFromDto(dto);
-        updated.setId(existing.getId());
-        orderRepository.save(updated);
-
-        return ResponseEntity.ok(new MessageResponse("Orden actualizada exitosamente."));
-    }
-
-    public void updateOrderStatusById(Long id, OrderStatus status){
-
-        Order order = getOrderById(id);
-        if (status == null) {
-            throw new IllegalArgumentException("El estado de la orden no puede ser nulo.");
+        List<OrderItemRequestDto> itemRequests = dto.getItems();
+        if (itemRequests == null || itemRequests.isEmpty()) {
+            throw new IllegalArgumentException("La orden debe contener al menos un producto.");
         }
-        order.setEstado(status);
-        orderRepository.save(order);
-    }
 
-    public ResponseEntity<MessageResponse> deleteOrder(Long id) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Orden no encontrada: " + id));
-        orderRepository.delete(order);
-        return ResponseEntity.ok(new MessageResponse("Orden eliminada correctamente."));
-    }
+        List<OrderItem> items = itemRequests.stream()
+                .map(this::buildOrderItem)
+                .collect(Collectors.toList());
 
-    private Order buildOrderFromDto(OrderDto dto) {
-        UserResponseDto user = userValidatorService.getUserById(dto.getUserId());
-        Course course = courseService.getCourseById(dto.getCourseId());
-        BigDecimal coursePrice = course.getPrice();
-        BigDecimal discount = BigDecimal.ZERO;
+        BigDecimal subtotal = items.stream()
+                .map(OrderItem::getSubtotal)
+                .reduce(ZERO, BigDecimal::add);
+
         Coupon coupon = null;
+        BigDecimal desiredDiscount = ZERO;
+        boolean newCouponApplied = false;
 
-        if (dto.getCouponCode() != null && !dto.getCouponCode().isEmpty()) {
-            coupon = couponService.getCouponByCode(dto.getCouponCode());
-
+        if (StringUtils.hasText(dto.getCouponCode())) {
+            coupon = couponService.getCouponByCode(dto.getCouponCode().trim());
             if (!coupon.isActive()) {
-                throw new IllegalArgumentException("Error al usar cupón.");
+                throw new IllegalArgumentException("El cupón proporcionado no está disponible.");
             }
-            discount = coupon.getDiscountAmount();
+            desiredDiscount = coupon.getDiscountAmount();
+            newCouponApplied = true;
+        } else if (currentOrder != null && currentOrder.getCoupon() != null) {
+            coupon = currentOrder.getCoupon();
+            desiredDiscount = coupon.getDiscountAmount();
+        }
+
+        BigDecimal discountApplied = desiredDiscount.compareTo(subtotal) > 0 ? subtotal : desiredDiscount;
+        BigDecimal finalPrice = subtotal.subtract(discountApplied);
+
+        Order order = Order.builder()
+                .userEmail(user.getEmail())
+                .estado(currentOrder != null ? currentOrder.getEstado() : OrderStatus.PENDING)
+                .coupon(coupon)
+                .finalPrice(finalPrice)
+                .discountApplied(discountApplied)
+                .orderDate(currentOrder != null ? currentOrder.getOrderDate() : LocalDateTime.now())
+                .items(items)
+                .build();
+
+        if (newCouponApplied && coupon != null) {
             couponService.updateCouponStatusByCode(coupon.getCode(), false);
         }
 
-        BigDecimal finalPrice = coursePrice.subtract(discount);
-        if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
-            finalPrice = BigDecimal.ZERO;
+        items.forEach(item -> item.setOrder(order));
+        return order;
+    }
+
+    private OrderItem buildOrderItem(OrderItemRequestDto itemDto) {
+        ProductResponseDto product = fetchProduct(itemDto.getProductId());
+        BigDecimal unitPrice = product.getPrecio();
+        if (unitPrice == null) {
+            throw new IllegalArgumentException("El producto " + product.getId() + " no tiene un precio definido.");
         }
 
-        return Order.builder()
-                .userId(user.getId())
-                .course(course)
-                .coupon(coupon)
-                .finalPrice(finalPrice)
-                .orderDate(LocalDateTime.now())
-                .active(false)
+        BigDecimal quantity = BigDecimal.valueOf(itemDto.getQuantity());
+        BigDecimal subtotal = unitPrice.multiply(quantity);
+        String imageBase64 = product.getImagen() != null
+                ? Base64.getEncoder().encodeToString(product.getImagen())
+                : null;
+
+        return OrderItem.builder()
+                .productId(product.getId())
+                .productName(product.getNombre())
+                .productDescription(product.getDescripcion())
+                .unitPrice(unitPrice)
+                .productImageUrl(imageBase64)
+                .quantity(itemDto.getQuantity())
+                .subtotal(subtotal)
                 .build();
     }
 
-
+    private ProductResponseDto fetchProduct(String productId) {
+        try {
+            ProductResponseDto product = productClient.getProductById(productId);
+            if (product == null) {
+                throw new ResourceNotFoundException("Producto no encontrado: " + productId);
+            }
+            return product;
+        } catch (FeignException.NotFound e) {
+            throw new ResourceNotFoundException("Producto no encontrado: " + productId);
+        } catch (FeignException e) {
+            throw new IllegalArgumentException("Error al obtener el producto: " + e.getMessage());
+        }
+    }
 }

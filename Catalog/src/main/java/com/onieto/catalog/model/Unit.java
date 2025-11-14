@@ -1,6 +1,11 @@
 package com.onieto.catalog.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,22 +13,22 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "levels")
+@Table(name = "units")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Level {
+public class Unit {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "El nombre del nivel es obligatorio")
+    @NotBlank(message = "El nombre de la unidad es obligatorio")
     @Column(unique = true)
     private String name;
 
-    public Level(String name) {
+    public Unit(String name) {
         this.name = name;
     }
 }

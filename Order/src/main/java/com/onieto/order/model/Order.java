@@ -3,12 +3,13 @@ package com.onieto.order.model;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.jspecify.annotations.NullUnmarked;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,8 +27,10 @@ public class Order{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "El usuario es obligatorio")
-    private Long userId;
+    @NotBlank(message = "El email del usuario es obligatorio")
+    @Email(message = "El email del usuario debe ser válido")
+    @Column(name = "user_email", nullable = false)
+    private String userEmail;
 
     @NotNull(message = "El estado es obligatorio")
     @Enumerated(EnumType.STRING)

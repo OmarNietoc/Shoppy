@@ -6,6 +6,7 @@ import com.onieto.order.exception.ResourceNotFoundException;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -13,31 +14,21 @@ public class UserValidatorService {
 
     private final UserClient userClient;
 
-    public UserResponseDto getUserById(Long userId) {
-        UserResponseDto user;
+    public UserResponseDto getUserByEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            throw new IllegalArgumentException("El email del usuario es obligatorio.");
+        }
 
         try {
-            user = userClient.getUserById(userId);
+            UserResponseDto user = userClient.getUserByEmail(email);
+            if (user.getStatus() != null && user.getStatus() == 0) {
+                throw new IllegalArgumentException("El usuario con email " + email + " no está activo.");
+            }
+            return user;
         } catch (FeignException.NotFound e) {
-            throw new ResourceNotFoundException("El usuario no existe: " + userId);
+            throw new ResourceNotFoundException("El usuario no existe: " + email);
         } catch (FeignException e) {
             throw new IllegalArgumentException("Error al obtener el usuario: " + e.getMessage());
         }
-        return user;
-    }
-
-    public UserResponseDto validateInstructor(Long instructorId) {
-        UserResponseDto instructor;
-        instructor = getUserById(instructorId);
-        validateRoleOfUser(instructor.getRole().getName(), "INSTRUCTOR");
-
-        return instructor;
-    }
-
-    public boolean validateRoleOfUser(String roleName, String nameSearched) {
-        if (roleName == null || !roleName.equalsIgnoreCase(nameSearched)) {
-            throw new IllegalArgumentException("El usuario ingresado no tiene el role de " + nameSearched + ".");
-        }
-        return true;
     }
 }

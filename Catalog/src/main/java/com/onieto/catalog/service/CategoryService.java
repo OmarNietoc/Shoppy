@@ -4,7 +4,7 @@ import com.onieto.catalog.exception.ConflictException;
 import com.onieto.catalog.exception.ResourceNotFoundException;
 import com.onieto.catalog.model.Category;
 import com.onieto.catalog.repository.CategoryRepository;
-import com.onieto.catalog.repository.CourseRepository;
+import com.onieto.catalog.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +15,7 @@ import java.util.List;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
-    private final CourseRepository courseRepository;
+    private final ProductRepository productRepository;
 
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
@@ -48,8 +48,8 @@ public class CategoryService {
 
     public void deleteCategory(Long id) {
         Category category = getCategoryById(id);
-        if (courseRepository.existsCoursesByCategoryId(id)) {
-            throw new IllegalStateException("No se puede eliminar la category porque hay courses asociados a esta.");
+        if (productRepository.existsProductsByCategoriaId(id)) {
+            throw new IllegalStateException("No se puede eliminar la categoría porque hay productos asociados a esta.");
         }
 
         categoryRepository.deleteById(id);
