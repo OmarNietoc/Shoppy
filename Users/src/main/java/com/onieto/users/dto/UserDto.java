@@ -1,6 +1,8 @@
 package com.onieto.users.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
+import jakarta.persistence.Lob;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.validator.constraints.ScriptAssert;
@@ -31,4 +33,14 @@ public class UserDto {
     @Min(value = 0, message = "El 'status' debe ser 1 o 0")
     @Max(value = 1, message = "El 'status' debe ser 1 o 0")
     private Integer status;
+
+    // Imagen de perfil (nullable)
+    @Lob
+    @Column(name = "imagen", columnDefinition = "LONGBLOB", nullable = true)
+    private byte[] imagen;
+
+    // Firebase UID (nullable)
+    @Column(name = "firebase_id", length = 255, nullable = true)
+    private String firebaseId;
+
 }

@@ -179,6 +179,7 @@
                         <exclude>**/config/*</exclude>
                         <exclude>**/model/*</exclude>
                         <exclude>**/repository/*</exclude>
+                        <exclude>**/exception/*</exclude>
                         <exclude>**/*Application.class</exclude>
                         <exclude>**/controller/*</exclude>
                         <exclude>**/dto/*</exclude>

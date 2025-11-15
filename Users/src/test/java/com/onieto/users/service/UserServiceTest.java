@@ -107,7 +107,7 @@ class UserServiceTest {
         Role mockRole = new Role(1L, "ADMIN");
 
         when(roleService.getRoleById(1L)).thenReturn(mockRole);
-        when(userRepository.existsByEmail("juan@onieto.com")).thenReturn(false);
+        when(userRepository.existsByEmail(userDto.getEmail())).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
