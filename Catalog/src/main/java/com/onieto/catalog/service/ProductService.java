@@ -47,16 +47,19 @@ public class ProductService {
 
 
     public ResponseEntity<?> createProduct(@Valid ProductDto dto) {
-        Category category = categoryService.getCategoryById(dto.getCategoryId());
-        Unit unit = unitService.getUnitById(dto.getUnitId());
+        Category category = categoryService.getCategoryById(dto.getCategoriaId());
+        Unit unit = unitService.getUnitById(dto.getUnidadId());
 
         Product product = Product.builder()
                 .id(dto.getId())
                 .nombre(dto.getNombre())
                 .descripcion(dto.getDescripcion())
+                .precio(dto.getPrecio())
+                .stock(dto.getStock())
+                .stockMinimo(resolveStockMinimo(dto.getStockMinimo()))
+                .activo(resolveActivo(dto.getActivo()))
                 .categoria(category)
                 .unid(unit)
-                .precio(dto.getPrecio())
                 .imagen(dto.getImagen())
                 .build();
 
@@ -66,12 +69,15 @@ public class ProductService {
 
     public ResponseEntity<MessageResponse> updateProduct(String id, ProductDto dto) {
         Product product = getProductById(id);
-        Category category = categoryService.getCategoryById(dto.getCategoryId());
-        Unit unit = unitService.getUnitById(dto.getUnitId());
+        Category category = categoryService.getCategoryById(dto.getCategoriaId());
+        Unit unit = unitService.getUnitById(dto.getUnidadId());
 
         product.setNombre(dto.getNombre());
         product.setDescripcion(dto.getDescripcion());
         product.setPrecio(dto.getPrecio());
+        product.setStock(dto.getStock());
+        product.setStockMinimo(resolveStockMinimo(dto.getStockMinimo()));
+        product.setActivo(resolveActivo(dto.getActivo()));
         product.setCategoria(category);
         product.setUnid(unit);
         product.setImagen(dto.getImagen());
@@ -84,5 +90,13 @@ public class ProductService {
         Product product = getProductById(id);
         productRepository.delete(product);
         return ResponseEntity.ok(new MessageResponse("Producto eliminado correctamente."));
+    }
+
+    private Integer resolveStockMinimo(Integer value) {
+        return value != null ? value : Product.DEFAULT_STOCK_MINIMO;
+    }
+
+    private Integer resolveActivo(Integer value) {
+        return value != null ? value : Product.DEFAULT_ACTIVO;
     }
 }

@@ -67,7 +67,7 @@ class OrderServiceTest {
 
         when(userValidatorService.getUserByEmail(dto.getUserEmail())).thenReturn(user);
         when(couponService.getCouponByCode("SAVE5")).thenReturn(coupon);
-        when(productClient.getProductById("SKU-1")).thenReturn(buildProduct("SKU-1", "10.00"));
+        when(productClient.getProductById("SKU-1")).thenReturn(buildProduct("SKU-1", 10));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ResponseEntity<OrderResponse> response = orderService.createOrder(dto);
@@ -106,7 +106,7 @@ class OrderServiceTest {
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(existingOrder));
         when(userValidatorService.getUserByEmail(dto.getUserEmail())).thenReturn(user);
-        when(productClient.getProductById("SKU-1")).thenReturn(buildProduct("SKU-1", "10.00"));
+        when(productClient.getProductById("SKU-1")).thenReturn(buildProduct("SKU-1", 10));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ResponseEntity<OrderResponse> response = orderService.updateOrder(orderId, dto);
@@ -187,12 +187,12 @@ class OrderServiceTest {
         return dto;
     }
 
-    private ProductResponseDto buildProduct(String id, String price) {
+    private ProductResponseDto buildProduct(String id, int price) {
         ProductResponseDto product = new ProductResponseDto();
         product.setId(id);
         product.setNombre("Sample");
         product.setDescripcion("Sample product");
-        product.setPrecio(new BigDecimal(price));
+        product.setPrecio(price);
         product.setImagen(new byte[]{1, 2, 3});
         return product;
     }

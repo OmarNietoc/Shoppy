@@ -164,11 +164,12 @@ public class OrderService {
 
     private OrderItem buildOrderItem(OrderItemRequestDto itemDto) {
         ProductResponseDto product = fetchProduct(itemDto.getProductId());
-        BigDecimal unitPrice = product.getPrecio();
-        if (unitPrice == null) {
+        Integer productPrice = product.getPrecio();
+        if (productPrice == null) {
             throw new IllegalArgumentException("El producto " + product.getId() + " no tiene un precio definido.");
         }
 
+        BigDecimal unitPrice = BigDecimal.valueOf(productPrice);
         BigDecimal quantity = BigDecimal.valueOf(itemDto.getQuantity());
         BigDecimal subtotal = unitPrice.multiply(quantity);
         String imageBase64 = product.getImagen() != null

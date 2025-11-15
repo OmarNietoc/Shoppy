@@ -18,7 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,8 +64,8 @@ class ProductServiceTest {
         Category category = Category.builder().id(3L).name("Tech").build();
         Unit unit = Unit.builder().id(4L).name("Unidad").build();
 
-        when(categoryService.getCategoryById(dto.getCategoryId())).thenReturn(category);
-        when(unitService.getUnitById(dto.getUnitId())).thenReturn(unit);
+        when(categoryService.getCategoryById(dto.getCategoriaId())).thenReturn(category);
+        when(unitService.getUnitById(dto.getUnidadId())).thenReturn(unit);
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ResponseEntity<?> response = productService.createProduct(dto);
@@ -79,6 +78,9 @@ class ProductServiceTest {
         Product saved = productCaptor.getValue();
         assertEquals(dto.getId(), saved.getId());
         assertEquals(dto.getNombre(), saved.getNombre());
+        assertEquals(dto.getStock(), saved.getStock());
+        assertEquals(dto.getStockMinimo(), saved.getStockMinimo());
+        assertEquals(dto.getPrecio(), saved.getPrecio());
         assertEquals(category, saved.getCategoria());
         assertEquals(unit, saved.getUnid());
     }
@@ -89,7 +91,10 @@ class ProductServiceTest {
                 .id("SKU-1")
                 .nombre("Tablet")
                 .descripcion("Old description with more than twenty chars")
-                .precio(new BigDecimal("99.99"))
+                .precio(99)
+                .stock(15)
+                .stockMinimo(5)
+                .activo(1)
                 .categoria(Category.builder().id(1L).name("Old").build())
                 .unid(Unit.builder().id(1L).name("Old unit").build())
                 .imagen(null)
@@ -100,13 +105,17 @@ class ProductServiceTest {
         Unit newUnit = Unit.builder().id(6L).name("Caja").build();
 
         when(productRepository.findById(existing.getId())).thenReturn(Optional.of(existing));
-        when(categoryService.getCategoryById(dto.getCategoryId())).thenReturn(newCategory);
-        when(unitService.getUnitById(dto.getUnitId())).thenReturn(newUnit);
+        when(categoryService.getCategoryById(dto.getCategoriaId())).thenReturn(newCategory);
+        when(unitService.getUnitById(dto.getUnidadId())).thenReturn(newUnit);
 
         ResponseEntity<MessageResponse> response = productService.updateProduct(existing.getId(), dto);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(dto.getNombre(), existing.getNombre());
+        assertEquals(dto.getPrecio(), existing.getPrecio());
+        assertEquals(dto.getStock(), existing.getStock());
+        assertEquals(dto.getStockMinimo(), existing.getStockMinimo());
+        assertEquals(dto.getActivo(), existing.getActivo());
         assertEquals(newCategory, existing.getCategoria());
         assertEquals(newUnit, existing.getUnid());
         verify(productRepository).save(existing);
@@ -118,7 +127,10 @@ class ProductServiceTest {
                 .id("SKU-1")
                 .nombre("Laptop")
                 .descripcion("Laptop description long enough")
-                .precio(new BigDecimal("150.00"))
+                .precio(150)
+                .stock(5)
+                .stockMinimo(2)
+                .activo(1)
                 .categoria(Category.builder().id(1L).name("Tech").build())
                 .unid(Unit.builder().id(1L).name("Unidad").build())
                 .build();
@@ -135,10 +147,13 @@ class ProductServiceTest {
         ProductDto dto = new ProductDto();
         dto.setId("SKU-1");
         dto.setNombre("Laptop Gamer");
-        dto.setDescripcion("Laptop de 16 pulgadas con buena tarjeta gráfica");
-        dto.setCategoryId(3L);
-        dto.setUnitId(4L);
-        dto.setPrecio(new BigDecimal("1499.99"));
+        dto.setDescripcion("Laptop de 16 pulgadas con buena tarjeta grafica");
+        dto.setCategoriaId(3L);
+        dto.setUnidadId(4L);
+        dto.setPrecio(1499);
+        dto.setStock(20);
+        dto.setStockMinimo(5);
+        dto.setActivo(1);
         dto.setImagen(new byte[]{1, 2, 3});
         return dto;
     }
