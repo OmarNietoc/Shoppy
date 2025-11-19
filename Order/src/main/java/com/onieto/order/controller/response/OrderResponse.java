@@ -21,8 +21,8 @@ public class OrderResponse {
     private String userEmail;
     private OrderStatus estado;
     private CouponResponse coupon;
-    private BigDecimal discountApplied;
-    private BigDecimal finalPrice;
+    private Integer discountApplied;
+    private Integer finalPrice;
     private LocalDateTime orderDate;
     private List<OrderItem> items;
 

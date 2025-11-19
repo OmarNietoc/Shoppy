@@ -28,7 +28,7 @@ public class Coupon {
     @NotNull(message = "El monto de descuento es obligatorio.")
     @Column(nullable = false)
     @DecimalMin(value = "0.01", message = "El descuento debe ser mayor a 0")
-    private BigDecimal discountAmount;
+    private Integer discountAmount;
 
     @Column(nullable = false)
     private boolean active;

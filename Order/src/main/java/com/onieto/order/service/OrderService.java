@@ -5,6 +5,7 @@ import com.onieto.order.controller.response.CouponResponse;
 import com.onieto.order.controller.response.MessageResponse;
 import com.onieto.order.controller.response.OrderResponse;
 import com.onieto.order.controller.response.UserResponseDto;
+import com.onieto.order.dto.AddItemToOrderRequest;
 import com.onieto.order.dto.OrderDto;
 import com.onieto.order.dto.OrderItemRequestDto;
 import com.onieto.order.dto.ProductResponseDto;
@@ -22,7 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderService {
 
-    private static final BigDecimal ZERO = BigDecimal.ZERO;
+    private static final int ZERO = 0;
 
     private final OrderRepository orderRepository;
     private final CouponService couponService;
@@ -57,18 +57,136 @@ public class OrderService {
         return ResponseEntity.ok(responses);
     }
 
+    // =========================
+    // Obtener carrito activo
+    // =========================
+    public ResponseEntity<OrderResponse> getActiveOrderByUserEmail(String userEmail) {
+        UserResponseDto user = userValidatorService.getUserByEmail(userEmail);
+
+        Order order = orderRepository
+                .findFirstByUserEmailAndEstadoOrderByOrderDateDesc(user.getEmail(), OrderStatus.PENDING)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "No existe una orden pendiente para el usuario: " + user.getEmail()
+                        )
+                );
+
+        return ResponseEntity.ok(convertToDTO(order));
+    }
+
+    // =========================
+    // Agregar ítem al carrito
+    // =========================
+    public ResponseEntity<OrderResponse> addItemToCart(@Valid AddItemToOrderRequest request) {
+        // Validar usuario
+        UserResponseDto user = userValidatorService.getUserByEmail(request.getUserEmail());
+
+        // Buscar orden PENDING existente
+        Order order = orderRepository
+                .findFirstByUserEmailAndEstadoOrderByOrderDateDesc(user.getEmail(), OrderStatus.PENDING)
+                .orElse(null);
+
+        OrderItemRequestDto itemDto = request.getItem();
+
+        // Si NO hay carrito -> crear uno nuevo con ese único ítem
+        if (order == null) {
+            OrderItem newItem = buildOrderItem(itemDto);
+
+            Order newOrder = Order.builder()
+                    .userEmail(user.getEmail())
+                    .estado(OrderStatus.PENDING)
+                    .coupon(null)
+                    .discountApplied(ZERO)
+                    .orderDate(LocalDateTime.now())
+                    .finalPrice(newItem.getSubtotal())
+                    .items(new java.util.ArrayList<>())
+                    .build();
+
+            newItem.setOrder(newOrder);
+            newOrder.getItems().add(newItem);
+
+            orderRepository.save(newOrder);
+            return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(newOrder));
+        }
+
+        // Si SÍ hay carrito -> agregar o actualizar ítem
+        OrderItem existingItem = order.getItems().stream()
+                .filter(i -> i.getProductId().equals(itemDto.getProductId()))
+                .findFirst()
+                .orElse(null);
+
+        if (existingItem != null) {
+            // Aumentar cantidad del producto ya existente
+            int nuevaCantidad = existingItem.getQuantity() + itemDto.getQuantity();
+            existingItem.setQuantity(nuevaCantidad);
+
+            int newSubtotal = existingItem.getUnitPrice() * nuevaCantidad;
+            existingItem.setSubtotal(newSubtotal);
+        } else {
+            // Agregar nuevo producto al carrito
+            OrderItem newItem = buildOrderItem(itemDto);
+            newItem.setOrder(order);
+            order.getItems().add(newItem);
+        }
+
+        // Recalcular subtotal total (int)
+        int subtotal = order.getItems().stream()
+                .mapToInt(OrderItem::getSubtotal)
+                .sum();
+
+        // Mantener misma lógica de descuento de la orden
+        Coupon coupon = order.getCoupon();
+        int desiredDiscount = (coupon != null && coupon.getDiscountAmount() != null)
+                ? coupon.getDiscountAmount()
+                : ZERO;
+
+        int discountApplied = Math.min(desiredDiscount, subtotal);
+        int finalPrice = subtotal - discountApplied;
+
+        order.setDiscountApplied(discountApplied);
+        order.setFinalPrice(finalPrice);
+
+        orderRepository.save(order);
+        return ResponseEntity.ok(convertToDTO(order));
+    }
+
+    // =========================
+    // Crear orden completa
+    // =========================
     public ResponseEntity<OrderResponse> createOrder(@Valid OrderDto dto) {
         Order order = buildOrderFromDto(dto, null);
         orderRepository.save(order);
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(order));
     }
 
+    // =========================
+    // Actualizar orden completa
+    // =========================
     public ResponseEntity<OrderResponse> updateOrder(Long id, @Valid OrderDto dto) {
         Order existing = getOrderById(id);
-        Order updated = buildOrderFromDto(dto, existing);
-        updated.setId(existing.getId());
-        orderRepository.save(updated);
-        return ResponseEntity.ok(convertToDTO(updated));
+
+        // 1. Limpiar items antiguos (se borran por orphanRemoval)
+        existing.getItems().clear();
+
+        // 2. Reconstruir la orden usando la existente como base
+        Order rebuilt = buildOrderFromDto(dto, existing);
+
+        // 3. Copiar los campos calculados a 'existing'
+        existing.setUserEmail(rebuilt.getUserEmail());
+        existing.setEstado(rebuilt.getEstado());
+        existing.setCoupon(rebuilt.getCoupon());
+        existing.setFinalPrice(rebuilt.getFinalPrice());
+        existing.setDiscountApplied(rebuilt.getDiscountApplied());
+        existing.setOrderDate(rebuilt.getOrderDate());
+
+        // 4. Asignar los nuevos items a la entidad existente
+        rebuilt.getItems().forEach(item -> item.setOrder(existing));
+        existing.getItems().addAll(rebuilt.getItems());
+
+        // 5. Guardar la entidad gestionada
+        orderRepository.save(existing);
+
+        return ResponseEntity.ok(convertToDTO(existing));
     }
 
     public ResponseEntity<MessageResponse> updateOrderStatusById(Long id, OrderStatus status) {
@@ -87,6 +205,9 @@ public class OrderService {
         return ResponseEntity.ok(new MessageResponse("Orden eliminada correctamente."));
     }
 
+    // =========================
+    // Helpers de conversión
+    // =========================
     private OrderResponse convertToDTO(Order order) {
         return OrderResponse.builder()
                 .id(order.getId())
@@ -109,6 +230,9 @@ public class OrderService {
                 .build();
     }
 
+    // =========================
+    // Lógica de construcción de Order
+    // =========================
     private Order buildOrderFromDto(OrderDto dto, Order currentOrder) {
         UserResponseDto user = userValidatorService.getUserByEmail(dto.getUserEmail());
 
@@ -121,12 +245,12 @@ public class OrderService {
                 .map(this::buildOrderItem)
                 .collect(Collectors.toList());
 
-        BigDecimal subtotal = items.stream()
-                .map(OrderItem::getSubtotal)
-                .reduce(ZERO, BigDecimal::add);
+        int subtotal = items.stream()
+                .mapToInt(OrderItem::getSubtotal)
+                .sum();
 
         Coupon coupon = null;
-        BigDecimal desiredDiscount = ZERO;
+        int desiredDiscount = ZERO;
         boolean newCouponApplied = false;
 
         if (StringUtils.hasText(dto.getCouponCode())) {
@@ -134,15 +258,19 @@ public class OrderService {
             if (!coupon.isActive()) {
                 throw new IllegalArgumentException("El cupón proporcionado no está disponible.");
             }
-            desiredDiscount = coupon.getDiscountAmount();
+            desiredDiscount = (coupon.getDiscountAmount() != null)
+                    ? coupon.getDiscountAmount()
+                    : ZERO;
             newCouponApplied = true;
         } else if (currentOrder != null && currentOrder.getCoupon() != null) {
             coupon = currentOrder.getCoupon();
-            desiredDiscount = coupon.getDiscountAmount();
+            desiredDiscount = (coupon.getDiscountAmount() != null)
+                    ? coupon.getDiscountAmount()
+                    : ZERO;
         }
 
-        BigDecimal discountApplied = desiredDiscount.compareTo(subtotal) > 0 ? subtotal : desiredDiscount;
-        BigDecimal finalPrice = subtotal.subtract(discountApplied);
+        int discountApplied = Math.min(desiredDiscount, subtotal);
+        int finalPrice = subtotal - discountApplied;
 
         Order order = Order.builder()
                 .userEmail(user.getEmail())
@@ -162,6 +290,9 @@ public class OrderService {
         return order;
     }
 
+    // =========================
+    // Construcción de OrderItem
+    // =========================
     private OrderItem buildOrderItem(OrderItemRequestDto itemDto) {
         ProductResponseDto product = fetchProduct(itemDto.getProductId());
         Integer productPrice = product.getPrecio();
@@ -169,9 +300,10 @@ public class OrderService {
             throw new IllegalArgumentException("El producto " + product.getId() + " no tiene un precio definido.");
         }
 
-        BigDecimal unitPrice = BigDecimal.valueOf(productPrice);
-        BigDecimal quantity = BigDecimal.valueOf(itemDto.getQuantity());
-        BigDecimal subtotal = unitPrice.multiply(quantity);
+        int unitPrice = productPrice;
+        int quantity = itemDto.getQuantity();
+        int subtotal = unitPrice * quantity;
+
         String imageBase64 = product.getImagen() != null
                 ? Base64.getEncoder().encodeToString(product.getImagen())
                 : null;
@@ -181,12 +313,15 @@ public class OrderService {
                 .productName(product.getNombre())
                 .productDescription(product.getDescripcion())
                 .unitPrice(unitPrice)
-                .productImageUrl(imageBase64)
-                .quantity(itemDto.getQuantity())
+                .productImage(imageBase64)
+                .quantity(quantity)
                 .subtotal(subtotal)
                 .build();
     }
 
+    // =========================
+    // Cliente a ms-products
+    // =========================
     private ProductResponseDto fetchProduct(String productId) {
         try {
             ProductResponseDto product = productClient.getProductById(productId);
@@ -200,4 +335,5 @@ public class OrderService {
             throw new IllegalArgumentException("Error al obtener el producto: " + e.getMessage());
         }
     }
+
 }

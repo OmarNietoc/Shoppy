@@ -38,8 +38,11 @@ public class OrderItem {
     @Column(name = "product_description", length = 1000)
     private String productDescription;
     @NotNull(message = "El precio unitario es obligatorio")
-    private BigDecimal unitPrice;
-    private String productImageUrl;
+    private Integer unitPrice;
+
+    @Lob
+    @Column(name = "product_image")
+    private String productImage;
 
     @NotNull(message = "La cantidad no puede ser nula")
     @Positive(message = "La cantidad debe ser mayor que 0")
@@ -47,5 +50,5 @@ public class OrderItem {
 
     @NotNull(message = "El subtotal es obligatorio")
     @Column(name = "subtotal")
-    private BigDecimal subtotal;
+    private Integer subtotal;
 }

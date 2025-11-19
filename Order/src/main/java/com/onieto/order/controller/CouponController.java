@@ -61,7 +61,7 @@ public class CouponController {
             @ApiResponse(responseCode = "400", description = "Monto de descuento inválido")
     })
     @PostMapping("/add")
-    public ResponseEntity<Coupon> createCoupon(@RequestParam BigDecimal discountAmount) {
+    public ResponseEntity<Coupon> createCoupon(@RequestParam Integer discountAmount) {
         return couponService.createCoupon(discountAmount);
     }
 

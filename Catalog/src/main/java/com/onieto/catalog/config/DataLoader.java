@@ -24,6 +24,9 @@ public class DataLoader implements CommandLineRunner {
     private final UnitRepository unitRepository;
     private final ProductRepository productRepository;
 
+    // 🔹 Unidades base que quieres tener siempre creadas
+    private static final List<String> UNIT_NAMES = List.of("kg", "500g", "L", "unidad");
+
     private static final List<ProductSeed> PRODUCT_SEEDS = List.of(
             new ProductSeed(
                     "FR001",
@@ -128,6 +131,10 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // 1) Crear/asegurar Units base
+        preloadUnits();
+
+        // 2) Si ya hay productos, no volvemos a cargarlos
         if (productRepository.count() > 0) {
             return;
         }
@@ -149,6 +156,14 @@ public class DataLoader implements CommandLineRunner {
                         .imagen(loadImage("img/products/" + seed.imagen()))
                         .build())
                 .forEach(productRepository::save);
+    }
+
+    // 🔹 Crea las unidades "kg", "500g", "L", "unidad" si no existen aún
+    private void preloadUnits() {
+        UNIT_NAMES.forEach(name ->
+                unitRepository.findByNameIgnoreCase(name)
+                        .orElseGet(() -> unitRepository.save(new Unit(name)))
+        );
     }
 
     private Category resolveCategory(String categoryName, Map<String, Category> cache) {

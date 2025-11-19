@@ -25,7 +25,7 @@ public class DataLoader implements CommandLineRunner {
         for (int i = 1; i <= 12; i++) {
             Coupon coupon = Coupon.builder()
                     .code("DESC" + String.format("%02d", i))
-                    .discountAmount(BigDecimal.valueOf(5 + i)) // de 6.00 a 17.00
+                    .discountAmount(Integer.valueOf(5 + i)) // de 6.00 a 17.00
                     .active(true) // todos inician como activos
                     .build();
             coupons.add(coupon);

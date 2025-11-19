@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.onieto.order.dto.AddItemToOrderRequest;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 
@@ -67,6 +69,42 @@ public class OrderController {
     @PutMapping("/{id}")
     public ResponseEntity<OrderResponse> updateOrder(@PathVariable Long id, @Valid @RequestBody OrderDto dto) {
         return orderService.updateOrder(id, dto);
+    }
+
+    // Obtener carrito activo por usuario
+    @Operation(
+            summary = "Obtener carrito activo por usuario",
+            description = "Devuelve la orden en estado PENDING para el email indicado, incluyendo todos sus ítems."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Carrito encontrado"),
+            @ApiResponse(responseCode = "404", description = "El usuario no tiene un carrito activo")
+    })
+    @GetMapping("/cart")
+    public ResponseEntity<OrderResponse> getActiveOrderByUserEmail(
+            @RequestParam String userEmail
+    ) {
+        return orderService.getActiveOrderByUserEmail(userEmail);
+    }
+
+
+    // Agregar ítem al carrito sin reconstruir todo
+    @Operation(
+            summary = "Agregar producto al carrito",
+            description = "Agrega un producto al carrito (orden en estado PENDING) del usuario. " +
+                    "Si el usuario aún no tiene carrito, se crea uno nuevo."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Carrito creado y producto agregado"),
+            @ApiResponse(responseCode = "200", description = "Producto agregado o actualizado en el carrito existente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "404", description = "Usuario o producto no encontrado")
+    })
+    @PostMapping("/cart/items")
+    public ResponseEntity<OrderResponse> addItemToCart(
+            @Valid @RequestBody AddItemToOrderRequest request
+    ) {
+        return orderService.addItemToCart(request);
     }
 
     @Operation(summary = "Actualizar estado de la orden", description = "Cambia el estado de una orden específica.")

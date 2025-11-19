@@ -37,7 +37,7 @@ public class CouponService {
                 .orElseThrow(() -> new ResourceNotFoundException("Error al usar cupón."));
     }
 
-    public ResponseEntity<Coupon> createCoupon(BigDecimal discountAmount) {
+    public ResponseEntity<Coupon> createCoupon(Integer discountAmount) {
         String generatedCode = UUID.randomUUID().toString().replace("-", "").substring(0, 9).toUpperCase();
 
         Coupon coupon = Coupon.builder()

@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -42,17 +43,17 @@ public class Order{
     private Coupon coupon;
 
     @NotNull(message = "El precio final no puede ser nulo")
-    private BigDecimal finalPrice;
+    private Integer finalPrice;
 
     @NotNull(message = "El descuento aplicado no puede ser nulo")
-    private BigDecimal discountApplied;
+    private Integer discountApplied;
 
     @NotNull(message = "La fecha de Orden es obligatoria")
     private LocalDateTime orderDate;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<OrderItem> items;
+    private List<OrderItem> items = new ArrayList<>();
 
 
 

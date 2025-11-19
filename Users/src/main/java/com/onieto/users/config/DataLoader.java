@@ -38,20 +38,20 @@ public class DataLoader implements CommandLineRunner {
                 roleRepository.save(new Role("MANAGER")));
 
         // Crear usuarios
-        User user1 = new User("Eric Cartman", "eric.cartman@southpark.com", "user123", userRole, 0);  // South Park
-        User user2 = new User("Kenny McCormick", "kenny.mccormick@southpark.com", "user123", userRole, 0);  // South Park
-        User user3 = new User("Chuck McGill", "chuck.mcgill@bettercallsaul.com", "user123", userRole, 0);  // Better Call Saul
-        User user4 = new User("Kim Wexler", "kim.wexler@bettercallsaul.com", "user123", userRole, 0);  // Better Call Saul
-        User user5 = new User("Summer Smith", "summer.smith@rickandmorty.com", "user123", userRole, 0);  // Rick and Morty
-        User user6 = new User("Beth Smith", "beth.smith@rickandmorty.com", "user123", userRole, 0);  // Rick and Morty
+        User user1 = new User("Eric Cartman", "eric.cartman@southpark.com", "user123", userRole, 1);  // South Park
+        User user2 = new User("Kenny McCormick", "kenny.mccormick@southpark.com", "user123", userRole, 1);  // South Park
+        User user3 = new User("Chuck McGill", "chuck.mcgill@bettercallsaul.com", "user123", userRole, 1);  // Better Call Saul
+        User user4 = new User("Kim Wexler", "kim.wexler@bettercallsaul.com", "user123", userRole, 1);  // Better Call Saul
+        User user5 = new User("Summer Smith", "summer.smith@rickandmorty.com", "user123", userRole, 1);  // Rick and Morty
+        User user6 = new User("Beth Smith", "beth.smith@rickandmorty.com", "user123", userRole, 1);  // Rick and Morty
 
 
         User admin1 = new User("Stan Marsh", "stan.m@cartman.com", "admin123", adminRole, 1);
         User admin2 = new User("Kyle Broflovski", "kyle.b@cartman.com", "admin123", adminRole, 1);
 
-        User support1 = new User("Homer Simpson", "homer.simpson@cartman.com", "support123", supportRole, 0);
-        User support2 = new User("Marge Simpson", "marge.simpson@cartman.com", "support123", supportRole, 0);
-        User support3 = new User("Bart Simpson", "bart.simpson@cartman.com", "support123", supportRole, 0);
+        User support1 = new User("Homer Simpson", "homer.simpson@cartman.com", "support123", supportRole, 1);
+        User support2 = new User("Marge Simpson", "marge.simpson@cartman.com", "support123", supportRole, 1);
+        User support3 = new User("Bart Simpson", "bart.simpson@cartman.com", "support123", supportRole, 1);
 
         User instructor1 = new User("Saul Goodman", "saul.goodman@cartman.com", "instructor123", instructorRole, 1);
         User instructor2 = new User("Mike Ehrmantraut", "mike.ehrmantraut@cartman.com", "instructor123", instructorRole, 1);

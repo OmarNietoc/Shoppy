@@ -28,7 +28,7 @@ public class Payment {
     private Long enrollmentId;
 
     @NotNull(message = "El monto no puede ser nulo")
-    private BigDecimal amount;
+    private Integer amount;
 
     @NotNull(message = "La fecha de transacción no puede ser nula")
     private LocalDateTime transactionDate;
@@ -37,7 +37,7 @@ public class Payment {
     @NotNull(message = "El estado de la transacción no puede ser nulo")
     private PaymentStatus status;
 
-    public Payment(String transactionCode, Long enrollmentId, BigDecimal amount,
+    public Payment(String transactionCode, Long enrollmentId, Integer amount,
                    LocalDateTime transactionDate, PaymentStatus status) {
         this.transactionCode = transactionCode;
         this.enrollmentId = enrollmentId;

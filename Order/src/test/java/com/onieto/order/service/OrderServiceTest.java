@@ -19,7 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -56,27 +57,33 @@ class OrderServiceTest {
 
     @Test
     void createOrder_WithValidPayload_ShouldPersistAndDisableCoupon() {
+        // Arrange
         OrderDto dto = buildOrderDto("SAVE5");
         UserResponseDto user = new UserResponseDto(1L, "Ana", "ana@shop.com", null, 1);
+        // cupón de 5 (Integer)
         Coupon coupon = Coupon.builder()
                 .id(10L)
                 .code("SAVE5")
-                .discountAmount(new BigDecimal("5.00"))
+                .discountAmount(5)
                 .active(true)
                 .build();
 
         when(userValidatorService.getUserByEmail(dto.getUserEmail())).thenReturn(user);
         when(couponService.getCouponByCode("SAVE5")).thenReturn(coupon);
+        // producto con precio 10 (Integer)
         when(productClient.getProductById("SKU-1")).thenReturn(buildProduct("SKU-1", 10));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
+        // Act
         ResponseEntity<OrderResponse> response = orderService.createOrder(dto);
 
+        // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("ana@shop.com", response.getBody().getUserEmail());
-        assertEquals(new BigDecimal("5.00"), response.getBody().getDiscountApplied());
-        assertEquals(new BigDecimal("5.00"), response.getBody().getFinalPrice());
+        // subtotal = 10, descuento = 5 -> finalPrice = 5
+        assertEquals(5, response.getBody().getDiscountApplied());
+        assertEquals(5, response.getBody().getFinalPrice());
         verify(orderRepository).save(any(Order.class));
         verify(couponService).updateCouponStatusByCode("SAVE5", false);
     }
@@ -84,29 +91,50 @@ class OrderServiceTest {
     @Test
     void updateOrder_WhenCouponCodeMissing_ShouldReuseExistingCoupon() {
         Long orderId = 4L;
+
+        // Cupón ya asociado a la orden existente
         Coupon existingCoupon = Coupon.builder()
                 .id(3L)
                 .code("KEEP")
-                .discountAmount(new BigDecimal("3.00"))
+                .discountAmount(200)   // por ejemplo $200 de descuento
                 .active(true)
                 .build();
+
+        // Ítem existente en la orden (MANZANAS FUJI)
+        OrderItem existingItem = OrderItem.builder()
+                .id(1L)
+                .productId("FR001")
+                .productName("Manzanas Fuji")
+                .productDescription("Crujientes y dulces, cultivadas en el Valle del Maule. Perfectas para meriendas saludables o como ingrediente en postres.")
+                .unitPrice(1200)   // precio en Integer
+                .quantity(1)
+                .subtotal(1200)
+                .build();
+
+        // Orden existente con UNA sola línea en items, lista MUTABLE
         Order existingOrder = Order.builder()
                 .id(orderId)
                 .userEmail("stored@shop.com")
                 .estado(OrderStatus.PAID)
                 .coupon(existingCoupon)
-                .finalPrice(new BigDecimal("7.00"))
-                .discountApplied(new BigDecimal("3.00"))
+                .finalPrice(1000)       // 1200 - 200 de descuento
+                .discountApplied(200)
                 .orderDate(LocalDateTime.of(2024, 1, 1, 10, 0))
-                .items(List.of())
+                .items(new java.util.ArrayList<>(List.of(existingItem))) // 🔁 lista mutable con 1 item
                 .build();
+        existingItem.setOrder(existingOrder);
 
-        OrderDto dto = buildOrderDto(null);
-        UserResponseDto user = new UserResponseDto(9L, "Luis", dto.getUserEmail(), null, 1);
+        // DTO de actualización SIN cupón (para que se reutilice el existente)
+        OrderDto dto = new OrderDto();
+        dto.setUserEmail("ana@shop.com");
+        dto.setItems(List.of(new OrderItemRequestDto("FR001", 1)));
+        dto.setCouponCode(null);
+
+        UserResponseDto user = new UserResponseDto(9L, "Ana", dto.getUserEmail(), null, 1);
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(existingOrder));
         when(userValidatorService.getUserByEmail(dto.getUserEmail())).thenReturn(user);
-        when(productClient.getProductById("SKU-1")).thenReturn(buildProduct("SKU-1", 10));
+        when(productClient.getProductById("FR001")).thenReturn(buildProduct("FR001", 1200));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ResponseEntity<OrderResponse> response = orderService.updateOrder(orderId, dto);
@@ -115,11 +143,12 @@ class OrderServiceTest {
         assertNotNull(response.getBody());
         assertEquals(OrderStatus.PAID, response.getBody().getEstado());
         assertEquals("KEEP", response.getBody().getCoupon().getCode());
-        assertEquals(new BigDecimal("3.00"), response.getBody().getDiscountApplied());
+        assertEquals(200, response.getBody().getDiscountApplied());
         verify(couponService, never()).getCouponByCode(anyString());
         verify(couponService, never()).updateCouponStatusByCode(anyString(), anyBoolean());
         verify(orderRepository).save(any(Order.class));
     }
+
 
     @Test
     void updateOrderStatusById_ShouldPersistStatusChange() {
@@ -143,7 +172,7 @@ class OrderServiceTest {
         Coupon coupon = Coupon.builder()
                 .id(1L)
                 .code("ACTIVE")
-                .discountAmount(new BigDecimal("2.00"))
+                .discountAmount(2)
                 .active(true)
                 .build();
         OrderItem item = OrderItem.builder()
@@ -151,17 +180,17 @@ class OrderServiceTest {
                 .productId("SKU-1")
                 .productName("Keyboard")
                 .productDescription("Mechanical keyboard")
-                .unitPrice(new BigDecimal("20.00"))
+                .unitPrice(20)
                 .quantity(1)
-                .subtotal(new BigDecimal("20.00"))
+                .subtotal(20)
                 .build();
         Order order = Order.builder()
                 .id(5L)
                 .userEmail("buyer@shop.com")
                 .estado(OrderStatus.PENDING)
                 .coupon(coupon)
-                .finalPrice(new BigDecimal("18.00"))
-                .discountApplied(new BigDecimal("2.00"))
+                .finalPrice(18)
+                .discountApplied(2)
                 .orderDate(LocalDateTime.now())
                 .items(List.of(item))
                 .build();
@@ -178,6 +207,8 @@ class OrderServiceTest {
         assertEquals("ACTIVE", response.getBody().get(0).getCoupon().getCode());
         verify(orderRepository).findAll();
     }
+
+    // Helpers
 
     private OrderDto buildOrderDto(String couponCode) {
         OrderDto dto = new OrderDto();

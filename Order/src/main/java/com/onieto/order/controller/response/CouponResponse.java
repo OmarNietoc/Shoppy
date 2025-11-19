@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 public class CouponResponse {
     private Long id;
     private String code;
-    private BigDecimal discountAmount;
+    private Integer discountAmount;
     private boolean active;
 
 }
