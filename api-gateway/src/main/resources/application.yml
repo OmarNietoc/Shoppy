@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: catalog-service
+          uri: ${CATALOG_SERVICE_URL:http://localhost:8081} # Default to localhost for dev
+          predicates:
+            - Path=/api/products/**, /api/categories/**, /api/units/**
+        - id: order-service
+          uri: ${ORDER_SERVICE_URL:http://localhost:8082} # Default to localhost for dev
+          predicates:
+            - Path=/api/orders/**
+        - id: users-service
+          uri: ${USERS_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/users/**
+
+        - id: supports-service
+          uri: ${SUPPORTS_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/supports/**
+      
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:5173" # Adjust as needed for frontend
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"

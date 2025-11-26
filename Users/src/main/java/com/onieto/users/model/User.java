@@ -9,7 +9,7 @@ import lombok.*;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "users")
+@Table(name = "app_users")
 @Data  // Lombok genera getters, setters, equals, hashCode y toString automáticamente
 @NoArgsConstructor  // Constructor vacío por defecto (necesario para JPA)
 @AllArgsConstructor  // Constructor con todos los parámetros, útil si lo necesitas para la creación rápida de instancias
@@ -49,7 +49,7 @@ public class User {
 
     // Imagen de perfil (nullable)
     @Lob
-    @Column(name = "imagen", columnDefinition = "LONGBLOB", nullable = true)
+    @Column(name = "imagen", nullable = true)
     private byte[] imagen;
 
     // Firebase UID (nullable)
