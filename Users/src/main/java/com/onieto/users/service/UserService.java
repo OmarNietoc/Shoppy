@@ -87,7 +87,9 @@ public class UserService {
                 userDto.getEmail(),
                 userDto.getPassword(),
                 role,
-                userDto.getStatus()
+                userDto.getStatus(),
+                userDto.getImagen(),
+                userDto.getFirebaseId()
         );
 
         userRepository.save(user);
@@ -104,6 +106,8 @@ public class UserService {
         user.setPassword(userDetails.getPassword());
         user.setStatus(userDetails.getStatus());
         user.setRole(role);
+        user.setImagen(userDetails.getImagen());
+        user.setFirebaseId(userDetails.getFirebaseId());
 
         userRepository.save(user);
     }

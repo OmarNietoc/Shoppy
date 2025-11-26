@@ -13,7 +13,7 @@ import org.hibernate.validator.constraints.ScriptAssert;
 @Schema(description = "DTO para la creación y actualización de usuarios")
 public class UserDto {
 
-    @Schema(description = "ID único del usuario", example = "1")
+    @Schema(description = "Nombre del usuario", example = "1")
     @NotEmpty(message = "'name' no puede estar vacío")
     @Size(min = 4, max = 100, message = "'name' debe tener entre 4 y 100 caracteres")
     private String name;

@@ -5,7 +5,6 @@ COPY Catalog/pom.xml Catalog/pom.xml
 COPY Order/pom.xml Order/pom.xml
 COPY Users/pom.xml Users/pom.xml
 COPY Supports/pom.xml Supports/pom.xml
-COPY Payments/pom.xml Payments/pom.xml
 COPY api-gateway/pom.xml api-gateway/pom.xml
 COPY Catalog/src Catalog/src
 # We need to build the parent first or just build the specific module if possible.
