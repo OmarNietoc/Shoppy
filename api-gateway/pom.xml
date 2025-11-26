@@ -8,13 +8,21 @@
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>Payments</artifactId>
+    <artifactId>api-gateway</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Payments</name>
-    <description>Payments</description>
+    <name>api-gateway</name>
+    <description>API Gateway for Shoppy</description>
     <properties>
         <java.version>17</java.version>
     </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+        <!-- Removed spring-cloud-gateway-server-webmvc to avoid conflicts with starter-gateway which uses Netty -->
+        <!-- If webmvc is needed for some reason, it should be carefully added, but standard gateway uses WebFlux -->
+    </dependencies>
     <build>
         <plugins>
             <plugin>
@@ -23,12 +31,4 @@
             </plugin>
         </plugins>
     </build>
-    <dependencies>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-    </dependencies>
-
 </project>

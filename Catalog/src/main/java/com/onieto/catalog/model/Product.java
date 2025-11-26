@@ -78,5 +78,6 @@ public class Product {
 
     @Lob
     @Basic(fetch = FetchType.LAZY)
+    @Column(name = "imagen")
     private byte[] imagen;
 }
