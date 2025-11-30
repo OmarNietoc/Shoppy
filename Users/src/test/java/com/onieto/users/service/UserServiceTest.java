@@ -43,16 +43,20 @@ class UserServiceTest {
 
     private User createValidUser() {
         Role role = new Role(1L, "ADMIN");
-        return new User(
-                1L,
+        User user = new User(
                 "Juan Pérez",
                 "juan@edutech.com",
                 "Password123",
                 role,
                 1,
-                null,
-                null
+                null, // imagen
+                null, // firebaseId
+                null, // phone
+                null, // region
+                null // comuna
         );
+        user.setId(1L);
+        return user;
     }
 
     @Test

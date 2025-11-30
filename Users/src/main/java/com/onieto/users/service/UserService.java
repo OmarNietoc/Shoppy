@@ -6,6 +6,8 @@ import com.onieto.users.exception.ResourceNotFoundException;
 import com.onieto.users.model.User;
 import com.onieto.users.model.Role;
 
+import com.onieto.users.repository.ComunaRepository;
+import com.onieto.users.repository.RegionRepository;
 import com.onieto.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,10 @@ public class UserService {
     private final UserRepository userRepository;
 
     private final RoleService roleService;
+
+    private final ComunaRepository comunaRepository;
+
+    private final RegionRepository regionRepository;
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -89,7 +95,11 @@ public class UserService {
                 role,
                 userDto.getStatus(),
                 userDto.getImagen(),
-                userDto.getFirebaseId()
+                userDto.getFirebaseId(),
+                userDto.getPhone(),
+                regionRepository.getRegionById(userDto.getRegion()),
+                comunaRepository.getComunaById(userDto.getComuna())
+
         );
 
         userRepository.save(user);

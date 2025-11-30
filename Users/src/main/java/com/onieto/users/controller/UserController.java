@@ -6,6 +6,7 @@ import com.onieto.users.repository.RoleRepository;
 import com.onieto.users.service.RoleService;
 import com.onieto.users.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import com.onieto.users.repository.UserRepository;
 
@@ -42,6 +45,7 @@ public class UserController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<User>> getUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
@@ -53,6 +57,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or #id == principal.id")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         User user = userService.getUserById(id);
         return ResponseEntity.ok(user);
@@ -65,6 +70,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @GetMapping("/by-email")
+    @PreAuthorize("hasRole('ADMIN') or #email == authentication.name")
     public ResponseEntity<User> getUserByEmail(@RequestParam String email) {
         return ResponseEntity.ok(userService.getUserByEmail(email));
     }
@@ -76,6 +82,7 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "Datos inválidos enviados en la solicitud")
     })
     @PostMapping("/add")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MessageResponse> addUser(@Valid @RequestBody UserDto userDto) {
         userService.createUser(userDto);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -90,6 +97,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or #id == principal.id")
     public ResponseEntity<MessageResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDetails) {
         userService.updateUser(id, userDetails);
         return ResponseEntity.ok(new MessageResponse("Usuario actualizado exitosamente."));
@@ -102,6 +110,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MessageResponse> deleteUser(@PathVariable Long id) {
         userService.deleteUserById(id);
         return ResponseEntity.ok(new MessageResponse("Usuario eliminado correctamente."));
@@ -115,6 +124,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MessageResponse> updateUserStatus(@PathVariable Long id, @RequestParam Integer status) {
         if (status < 0 || status > 1) {
             return ResponseEntity.badRequest().body(new MessageResponse("El 'status' debe ser 1 o 0."));

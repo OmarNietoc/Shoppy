@@ -7,8 +7,25 @@ spring:
     username: ${POSTGRES_USER:shoppy}
     password: ${POSTGRES_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
+
   jpa:
     show-sql: true
     generate-ddl: true
     hibernate:
       ddl-auto: update
+    # Esta propiedad va dentro de 'jpa', al mismo nivel que 'hibernate'
+    defer-datasource-initialization: true
+
+  # 'sql' va al mismo nivel que 'jpa' y 'datasource' (dentro de 'spring')
+  sql:
+    init:
+      mode: always
+
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+    url: /catalog/v3/api-docs
+    config-url: /catalog/v3/api-docs
+    urls:
+      - name: Catalog API
+        url: /catalog/v3/api-docs

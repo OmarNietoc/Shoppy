@@ -5,14 +5,14 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
-
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "app_users")
-@Data  // Lombok genera getters, setters, equals, hashCode y toString automáticamente
-@NoArgsConstructor  // Constructor vacío por defecto (necesario para JPA)
-@AllArgsConstructor  // Constructor con todos los parámetros, útil si lo necesitas para la creación rápida de instancias
+@Data // Lombok genera getters, setters, equals, hashCode y toString automáticamente
+@NoArgsConstructor // Constructor vacío por defecto (necesario para JPA)
+@AllArgsConstructor // Constructor con todos los parámetros, útil si lo necesitas para la creación
+                    // rápida de instancias
 public class User {
 
     @Id
@@ -37,10 +37,11 @@ public class User {
     private Role role;
 
     /*
-    @NotNull(message = "'role' no puede ser nulo")
-    @Min(value = 0, message = "'role' debe ser mayor o igual a 0")
-    private Integer role;
-    */
+     * @NotNull(message = "'role' no puede ser nulo")
+     * 
+     * @Min(value = 0, message = "'role' debe ser mayor o igual a 0")
+     * private Integer role;
+     */
 
     @NotNull(message = "'status' no puede ser nulo")
     @Min(value = 0, message = "El 'status' debe ser 1 o 0")
@@ -56,13 +57,28 @@ public class User {
     @Column(name = "firebase_id", length = 255, nullable = true)
     private String firebaseId;
 
+    // Phone number (nullable)
+    @Column(name = "phone", nullable = true)
+    private String phone;
+
+    // Region (nullable)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_region", nullable = true)
+    private Region region;
+
+    // Comuna (nullable)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_comuna", nullable = true)
+    private Comuna comuna;
+
     // 🔹 Constructor principal sin los campos opcionales
     public User(String name, String email, String password, Role role, Integer status) {
-        this(name, email, password, role, status, null, null);
+        this(name, email, password, role, status, null, null, null, null, null);
     }
 
     // 🔹 Constructor completo con los campos opcionales
-    public User(String name, String email, String password, Role role, Integer status, byte[] imagen, String firebaseId) {
+    public User(String name, String email, String password, Role role, Integer status, byte[] imagen, String firebaseId,
+            String phone, Region region, Comuna comuna) {
         this.name = name;
         this.email = email;
         this.password = password;
@@ -70,5 +86,8 @@ public class User {
         this.status = status;
         this.imagen = imagen;
         this.firebaseId = firebaseId;
+        this.phone = phone;
+        this.region = region;
+        this.comuna = comuna;
     }
 }

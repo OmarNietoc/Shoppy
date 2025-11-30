@@ -10,3 +10,11 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+    url: /order/v3/api-docs
+    config-url: /order/v3/api-docs
+    urls:
+      - name: Order API
+        url: /order/v3/api-docs

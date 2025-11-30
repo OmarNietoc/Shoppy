@@ -80,4 +80,7 @@ public class Product {
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "imagen")
     private byte[] imagen;
+
+    @Column(name = "oferta", length = 50, nullable = true)
+    private String oferta;
 }

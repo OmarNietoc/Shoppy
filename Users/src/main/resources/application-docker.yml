@@ -12,3 +12,21 @@ spring:
     generate-ddl: true
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+
+shoppy:
+  app:
+    jwtSecret: ${JWT_SECRET:shoppySecretKey12345678901234567890123456789012}
+    jwtExpirationMs: ${JWT_EXPIRATION_MS:86400000}
+
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+    url: /users/v3/api-docs
+    config-url: /users/v3/api-docs
+    urls:
+      - name: Users API
+        url: /users/v3/api-docs
